@@ -1,206 +1,149 @@
 import { Link } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import 'react-native-reanimated';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Palette } from '@/constants/theme';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
 interface Comida {
-  id: number;
-  nombre: string;
-  calorias: number;
-  proteina: number;
-  carbohidratos: number;
-  grasa: number;
+  id: number; nombre: string;
+  calorias: number; proteina: number; carbohidratos: number; grasa: number;
 }
-
 interface PlanNutricion {
-  id: number;
-  nombre: string;
-  objetivo: string;
-  comidas: Comida[];
+  id: number; nombre: string; objetivo: string; comidas: Comida[];
 }
 
-// Datos de ejemplo
 const DEFAULT_PLANS: PlanNutricion[] = [
   {
-    id: 1,
-    nombre: 'Plan Perder Grasa',
-    objetivo: 'perder_grasa',
+    id: 1, nombre: 'Plan Perder Grasa', objetivo: 'perder_grasa',
     comidas: [
-      { id: 1, nombre: 'Desayuno Proteico', calorias: 350, proteina: 30, carbohidratos: 25, grasa: 10 },
+      { id: 1, nombre: 'Desayuno Proteico',      calorias: 350, proteina: 30, carbohidratos: 25, grasa: 10 },
       { id: 2, nombre: 'Almuerzo Bajo en Carbs', calorias: 450, proteina: 40, carbohidratos: 30, grasa: 15 },
-      { id: 3, nombre: 'Cena Ligera', calorias: 300, proteina: 35, carbohidratos: 20, grasa: 8 },
+      { id: 3, nombre: 'Cena Ligera',            calorias: 300, proteina: 35, carbohidratos: 20, grasa: 8  },
     ],
   },
   {
-    id: 2,
-    nombre: 'Plan Ganar Músculo',
-    objetivo: 'ganar_musculo',
+    id: 2, nombre: 'Plan Ganar Músculo', objetivo: 'ganar_musculo',
     comidas: [
-      { id: 4, nombre: 'Desayuno Calórico', calorias: 600, proteina: 40, carbohidratos: 60, grasa: 20 },
-      { id: 5, nombre: 'Almuerzo Hiperproteico', calorias: 700, proteina: 50, carbohidratos: 70, grasa: 25 },
-      { id: 6, nombre: 'Cena Proteica', calorias: 550, proteina: 45, carbohidratos: 50, grasa: 18 },
+      { id: 4, nombre: 'Desayuno Calórico',       calorias: 600, proteina: 40, carbohidratos: 60, grasa: 20 },
+      { id: 5, nombre: 'Almuerzo Hiperproteico',  calorias: 700, proteina: 50, carbohidratos: 70, grasa: 25 },
+      { id: 6, nombre: 'Cena Proteica',           calorias: 550, proteina: 45, carbohidratos: 50, grasa: 18 },
     ],
   },
   {
-    id: 3,
-    nombre: 'Plan Mantenimiento',
-    objetivo: 'mantenimiento',
+    id: 3, nombre: 'Plan Mantenimiento', objetivo: 'mantenimiento',
     comidas: [
       { id: 7, nombre: 'Desayuno Balanceado', calorias: 450, proteina: 25, carbohidratos: 45, grasa: 15 },
-      { id: 8, nombre: 'Almuerzo Equilibrado', calorias: 500, proteina: 30, carbohidratos: 50, grasa: 18 },
-      { id: 9, nombre: 'Cena Moderada', calorias: 400, proteina: 28, carbohidratos: 40, grasa: 12 },
+      { id: 8, nombre: 'Almuerzo Equilibrado',calorias: 500, proteina: 30, carbohidratos: 50, grasa: 18 },
+      { id: 9, nombre: 'Cena Moderada',       calorias: 400, proteina: 28, carbohidratos: 40, grasa: 12 },
     ],
   },
 ];
 
-const getObjectiveLabel = (objetivo: string): string => {
-  switch (objetivo) {
-    case 'perder_grasa': return '🔥 Perder Grasa';
-    case 'ganar_musculo': return '💪 Ganar Músculo';
-    case 'mantenimiento': return '⚖️ Mantenimiento';
-    default: return objetivo;
-  }
-};
-
-const getObjectiveColor = (objetivo: string): string => {
-  switch (objetivo) {
-    case 'perder_grasa': return '#FF6B6B';
-    case 'ganar_musculo': return '#4CAF50';
-    case 'mantenimiento': return '#6C63FF';
-    default: return '#6C63FF';
-  }
+const OBJ_META: Record<string, { label: string; color: string; icon: string }> = {
+  perder_grasa:  { label: 'Perder Grasa',   color: Palette.danger,    icon: '🔥' },
+  ganar_musculo: { label: 'Ganar Músculo',  color: Palette.secondary, icon: '💪' },
+  mantenimiento: { label: 'Mantenimiento',  color: Palette.accent,    icon: '⚖️' },
 };
 
 export default function NutritionScreen() {
-  const [plans, setPlans] = useState<PlanNutricion[]>(DEFAULT_PLANS);
-  const [loading, setLoading] = useState(false);
+  const [plans,        setPlans]        = useState<PlanNutricion[]>(DEFAULT_PLANS);
+  const [loading,      setLoading]      = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanNutricion | null>(null);
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
+  useEffect(() => { fetchPlans(); }, []);
 
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/planes-nutricion`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.length > 0) {
-          setPlans(data);
-        }
-      }
-    } catch (e) {
-      console.log('Error, usando datos por defecto');
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch(`${API_BASE}/planes-nutricion`, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) { const d = await res.json(); if (d.length) setPlans(d); }
+    } catch {}
+    finally { setLoading(false); }
   };
 
-  const getTotalNutrients = (plan: PlanNutricion) => {
-    let calories = 0, proteina = 0, carbohidratos = 0, grasa = 0;
-    plan.comidas.forEach(c => {
-      calories += c.calorias;
-      proteina += c.proteina;
-      carbohidratos += c.carbohidratos;
-      grasa += c.grasa;
-    });
-    return { calories, proteina, carbohidratos, grasa };
-  };
+  const getTotals = (plan: PlanNutricion) =>
+    plan.comidas.reduce((acc, c) => ({
+      calories: acc.calories + c.calorias,
+      proteina: acc.proteina + c.proteina,
+      carbohidratos: acc.carbohidratos + c.carbohidratos,
+      grasa: acc.grasa + c.grasa,
+    }), { calories: 0, proteina: 0, carbohidratos: 0, grasa: 0 });
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={s.container}>
+      <StatusBar barStyle="light-content" backgroundColor={Palette.bgDeep} />
+
+      <View style={s.header}>
         <Link href="/" asChild>
-          <TouchableOpacity style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+          <TouchableOpacity style={s.backBtn}>
+            <Text style={s.backArrow}>←</Text>
           </TouchableOpacity>
         </Link>
-        <Text style={styles.title}>Nutrición</Text>
-        <View style={styles.placeholder} />
+        <Text style={s.title}>Nutrición</Text>
+        <View style={{ width: 44 }} />
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6C63FF" />
-        </View>
+        <View style={s.loader}><ActivityIndicator size="large" color={Palette.primary} /></View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Planes Nutricionales */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Planes Nutricionales</Text>
-            {plans.map((plan) => (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
+          <Text style={s.sectionTitle}>Planes Nutricionales</Text>
+
+          {plans.map((plan) => {
+            const meta      = OBJ_META[plan.objetivo] ?? OBJ_META.mantenimiento;
+            const isOpen    = selectedPlan?.id === plan.id;
+            const totals    = getTotals(plan);
+
+            return (
               <TouchableOpacity
                 key={plan.id}
-                style={[
-                  styles.planCard,
-                  selectedPlan?.id === plan.id && styles.planCardSelected,
-                ]}
-                onPress={() => setSelectedPlan(selectedPlan?.id === plan.id ? null : plan)}
+                style={[s.planCard, isOpen && { borderColor: meta.color }]}
+                onPress={() => setSelectedPlan(isOpen ? null : plan)}
+                activeOpacity={0.85}
               >
-                <View style={styles.planHeader}>
-                  <Text style={styles.planName}>{plan.nombre}</Text>
-                  <View style={[styles.objectiveBadge, { backgroundColor: getObjectiveColor(plan.objetivo) }]}>
-                    <Text style={styles.objectiveText}>{getObjectiveLabel(plan.objetivo)}</Text>
+                {/* Card header */}
+                <View style={s.planCardHeader}>
+                  <View style={[s.planIconWrap, { backgroundColor: meta.color + '22' }]}>
+                    <Text style={s.planIcon}>{meta.icon}</Text>
                   </View>
+                  <View style={s.planTitleWrap}>
+                    <Text style={s.planName}>{plan.nombre}</Text>
+                    <View style={[s.objBadge, { backgroundColor: meta.color + '22' }]}>
+                      <Text style={[s.objBadgeText, { color: meta.color }]}>{meta.label}</Text>
+                    </View>
+                  </View>
+                  <Text style={[s.chevron, { color: meta.color }]}>{isOpen ? '▲' : '▼'}</Text>
                 </View>
-                
-                {selectedPlan?.id === plan.id && (
-                  <View style={styles.planDetails}>
-                    {/* Totales */}
-                    <View style={styles.totalsContainer}>
-                      {(() => {
-                        const totals = getTotalNutrients(plan);
-                        return (
-                          <>
-                            <View style={styles.totalItem}>
-                              <Text style={styles.totalValue}>{totals.calories}</Text>
-                              <Text style={styles.totalLabel}>Kcal</Text>
-                            </View>
-                            <View style={styles.totalItem}>
-                              <Text style={styles.totalValue}>{totals.proteina}g</Text>
-                              <Text style={styles.totalLabel}>Proteína</Text>
-                            </View>
-                            <View style={styles.totalItem}>
-                              <Text style={styles.totalValue}>{totals.carbohidratos}g</Text>
-                              <Text style={styles.totalLabel}>Carbs</Text>
-                            </View>
-                            <View style={styles.totalItem}>
-                              <Text style={styles.totalValue}>{totals.grasa}g</Text>
-                              <Text style={styles.totalLabel}>Grasa</Text>
-                            </View>
-                          </>
-                        );
-                      })()}
+
+                {/* Expanded detail */}
+                {isOpen && (
+                  <View style={s.planDetail}>
+                    {/* Macros row */}
+                    <View style={s.macroRow}>
+                      {[
+                        { label: 'Kcal',     value: String(totals.calories), color: meta.color },
+                        { label: 'Proteína', value: `${totals.proteina}g`,   color: Palette.secondary },
+                        { label: 'Carbs',    value: `${totals.carbohidratos}g`, color: Palette.warning },
+                        { label: 'Grasa',    value: `${totals.grasa}g`,      color: Palette.danger },
+                      ].map(m => (
+                        <View key={m.label} style={s.macroItem}>
+                          <Text style={[s.macroValue, { color: m.color }]}>{m.value}</Text>
+                          <Text style={s.macroLabel}>{m.label}</Text>
+                        </View>
+                      ))}
                     </View>
 
-                    {/* Comidas del plan */}
-                    <Text style={styles.mealsTitle}>Comidas del Plan</Text>
-                    {plan.comidas.map((comida, index) => (
-                      <View key={index} style={styles.mealItem}>
-                        <View style={styles.mealIcon}>
-                          <Text style={styles.mealIconText}>🍽️</Text>
+                    <Text style={s.mealsLabel}>Comidas del Plan</Text>
+                    {plan.comidas.map((c) => (
+                      <View key={c.id} style={s.mealRow}>
+                        <View style={s.mealIconWrap}>
+                          <Text style={s.mealIcon}>🍽️</Text>
                         </View>
-                        <View style={styles.mealInfo}>
-                          <Text style={styles.mealName}>{comida.nombre}</Text>
-                          <Text style={styles.mealNutrients}>
-                            {comida.calorias} kcal • {comida.proteina}g P • {comida.carbohidratos}g C • {comida.grasa}g G
+                        <View style={s.mealInfo}>
+                          <Text style={s.mealName}>{c.nombre}</Text>
+                          <Text style={s.mealMacros}>
+                            {c.calorias} kcal · {c.proteina}g P · {c.carbohidratos}g C · {c.grasa}g G
                           </Text>
                         </View>
                       </View>
@@ -208,163 +151,65 @@ export default function NutritionScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-            ))}
-          </View>
+            );
+          })}
 
-          <View style={styles.bottomSpacing} />
+          <View style={{ height: 100 }} />
         </ScrollView>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+const s = StyleSheet.create({
+  container:     { flex: 1, backgroundColor: Palette.bgDeep },
+  loader:        { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { paddingHorizontal: 20 },
+
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2A2A3D',
-    justifyContent: 'center',
-    alignItems: 'center',
+  backBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: Palette.bgElevated, borderWidth: 1, borderColor: Palette.border,
+    justifyContent: 'center', alignItems: 'center',
   },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  placeholder: {
-    width: 44,
-  },
-  section: {
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
+  backArrow: { color: Palette.textPrimary, fontSize: 20 },
+  title:     { fontSize: 22, fontWeight: '800', color: Palette.textPrimary },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: Palette.textPrimary, marginBottom: 16, marginTop: 4 },
+
   planCard: {
-    backgroundColor: '#1E1E2D',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: Palette.bgCard, borderRadius: 20, padding: 16,
+    marginBottom: 12, borderWidth: 1.5, borderColor: Palette.border,
   },
-  planCardSelected: {
-    borderColor: '#6C63FF',
-    borderWidth: 2,
+  planCardHeader: { flexDirection: 'row', alignItems: 'center' },
+  planIconWrap:   { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  planIcon:       { fontSize: 22 },
+  planTitleWrap:  { flex: 1 },
+  planName:       { color: Palette.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 5 },
+  objBadge:       { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  objBadgeText:   { fontSize: 11, fontWeight: '700' },
+  chevron:        { fontSize: 12, fontWeight: '700' },
+
+  planDetail: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: Palette.border },
+
+  macroRow:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  macroItem:  { flex: 1, backgroundColor: Palette.bgElevated, borderRadius: 12, padding: 10, alignItems: 'center', marginHorizontal: 3 },
+  macroValue: { fontSize: 15, fontWeight: '800', marginBottom: 2 },
+  macroLabel: { color: Palette.textSecondary, fontSize: 10 },
+
+  mealsLabel: { color: Palette.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 10, letterSpacing: 0.5 },
+  mealRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Palette.bgElevated, borderRadius: 12, padding: 12, marginBottom: 8,
   },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  mealIconWrap: {
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: Palette.secondaryGlow, justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  planName: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  objectiveBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  objectiveText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  planDetails: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#2A2A3D',
-  },
-  totalsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  totalItem: {
-    backgroundColor: '#2A2A3D',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  totalValue: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalLabel: {
-    color: '#A0A0A0',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  mealsTitle: {
-    color: '#A0A0A0',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  mealItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2A2A3D',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  mealIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3A3A4D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  mealIconText: {
-    fontSize: 20,
-  },
-  mealInfo: {
-    flex: 1,
-  },
-  mealName: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  mealNutrients: {
-    color: '#A0A0A0',
-    fontSize: 12,
-  },
-  bottomSpacing: {
-    height: 100,
-  },
+  mealIcon:   { fontSize: 18 },
+  mealInfo:   { flex: 1 },
+  mealName:   { color: Palette.textPrimary,   fontSize: 13, fontWeight: '700', marginBottom: 3 },
+  mealMacros: { color: Palette.textSecondary, fontSize: 11 },
 });
