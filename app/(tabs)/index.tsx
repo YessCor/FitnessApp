@@ -1,98 +1,246 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import ExerciseCard from '@/components/ExerciseCard';
+import MealCard from '@/components/MealCard';
+import PlanCard from '@/components/PlanCard';
+
+// URL base de la API - cambia esto por tu IP local
+const API_BASE = 'http://192.168.1.8:3000';
+
+interface Plan {
+  id: number;
+  nombre: string;
+  nivel: string;
+  duracion_semanas: number;
+}
+
+interface Exercise {
+  id: number;
+  nombre: string;
+  grupo_muscular: string;
+}
+
+interface Meal {
+  id: number;
+  nombre: string;
+  calorias: number;
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch planes
+      const plansResponse = await fetch(`${API_BASE}/planes`);
+      const plansData = await plansResponse.json();
+      setPlans(plansData);
+      
+      // Fetch ejercicios
+      const exercisesResponse = await fetch(`${API_BASE}/ejercicios`);
+      const exercisesData = await exercisesResponse.json();
+      setExercises(exercisesData);
+      
+      // Fetch comidas
+      const mealsResponse = await fetch(`${API_BASE}/comidas`);
+      const mealsData = await mealsResponse.json();
+      setMeals(mealsData);
+      
+      setError(null);
+    } catch (err) {
+      setError('Error al cargar los datos. Verifica que la API esté corriendo.');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#121212" />
+        <ActivityIndicator size="large" color="#6C63FF" />
+        <Text style={styles.loadingText}>Cargando...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Encabezado */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Fitness App</Text>
+          <Text style={styles.subtitle}>Bienvenido</Text>
+        </View>
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Sección Planes de Entrenamiento */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Planes de Entrenamiento</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            {plans.length > 0 ? (
+              plans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  name={plan.nombre}
+                  level={plan.nivel}
+                  durationWeeks={plan.duracion_semanas}
+                />
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No hay planes disponibles</Text>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Sección Ejercicios */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ejercicios</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            {exercises.length > 0 ? (
+              exercises.map((exercise) => (
+                <ExerciseCard
+                  key={exercise.id}
+                  name={exercise.nombre}
+                  muscleGroup={exercise.grupo_muscular}
+                />
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No hay ejercicios disponibles</Text>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Sección Nutrición */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Nutrición</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            {meals.length > 0 ? (
+              meals.map((meal) => (
+                <MealCard
+                  key={meal.id}
+                  name={meal.nombre}
+                  calories={meal.calorias}
+                />
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No hay comidas disponibles</Text>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Espaciado final */}
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#121212',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  loadingText: {
+    color: '#A0A0A0',
+    marginTop: 12,
+    fontSize: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#A0A0A0',
+  },
+  errorContainer: {
+    backgroundColor: '#FF4444',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 16,
+    marginHorizontal: 20,
+  },
+  horizontalScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  noDataText: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  bottomSpacing: {
+    height: 100,
   },
 });

@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Modelos para la aplicación de Fitness
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workouts Workout[]
+  exercises Exercise[]
+}
+
+model Workout {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  date        DateTime @default(now())
+  duration    Int      // Duration in minutes
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workoutExercises WorkoutExercise[]
+}
+
+model Exercise {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  muscleGroup String
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workoutExercises WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id         Int      @id @default(autoincrement())
+  workoutId  Int
+  workout    Workout  @relation(fields: [workoutId], references: [id])
+  exerciseId Int
+  exercise    Exercise @relation(fields: [exerciseId], references: [id])
+  sets        Int
+  reps        Int
+  weight     Float?
+  order      Int      @default(0)
+}
