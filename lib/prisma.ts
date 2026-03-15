@@ -1,17 +1,11 @@
-import { PrismaPg } from '@prisma/adapter-pg';
+import { neon } from '@neondatabase/serverless';
+import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
-import pg from 'pg';
 
-const { Pool } = pg;
-
-// Configuración del pool de conexiones
+// Configuración del adapter de Neon
 const connectionString = process.env.DATABASE_URL || '';
-
-const pool = new Pool({
-  connectionString,
-});
-
-const adapter = new PrismaPg(pool);
+const sql = neon(connectionString);
+const adapter = new PrismaNeon(sql);
 
 // En desarrollo, usamos una única instancia para evitar múltiples conexiones
 // En producción, esto puede variar dependiendo del entorno
@@ -24,7 +18,7 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

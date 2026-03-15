@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,54 +6,91 @@ datasource db {
   provider = "postgresql"
 }
 
-// Modelos para la aplicación de Fitness
+// Tabla de Ejercicios
+model Ejercicio {
+  id            Int      @id @default(autoincrement())
+  nombre        String   @db.VarChar(100)
+  grupoMuscular String   @map("grupo_muscular") @db.VarChar(50)
+  descripcion   String?  @db.Text
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ejerciciosPlan EjercicioPlan[]
 
-  workouts Workout[]
-  exercises Exercise[]
+  @@map("ejercicios")
 }
 
-model Workout {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  date        DateTime @default(now())
-  duration    Int      // Duration in minutes
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Tabla de Planes de Entrenamiento
+model PlanEntrenamiento {
+  id              Int      @id @default(autoincrement())
+  nombre          String   @db.VarChar(100)
+  nivel           String   @db.VarChar(50)
+  duracionSemanas Int      @map("duracion_semanas")
 
-  workoutExercises WorkoutExercise[]
+  ejerciciosPlan EjercicioPlan[]
+
+  @@map("planes_entrenamiento")
 }
 
-model Exercise {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  muscleGroup String
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Tabla de relación muchos a muchos entre Planes y Ejercicios
+model EjercicioPlan {
+  id          Int  @id @default(autoincrement())
+  planId      Int  @map("plan_id")
+  ejercicioId Int  @map("ejercicio_id")
+  series      Int
+  repeticiones Int @map("repeticiones")
 
-  workoutExercises WorkoutExercise[]
+  plan      PlanEntrenamiento @relation(fields: [planId], references: [id], onDelete: Cascade)
+  ejercicio Ejercicio          @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([ejercicioId])
+  @@map("ejercicios_plan")
 }
 
-model WorkoutExercise {
-  id         Int      @id @default(autoincrement())
-  workoutId  Int
-  workout    Workout  @relation(fields: [workoutId], references: [id])
-  exerciseId Int
-  exercise    Exercise @relation(fields: [exerciseId], references: [id])
-  sets        Int
-  reps        Int
-  weight     Float?
-  order      Int      @default(0)
+// Tabla de Comidas
+model Comida {
+  id           Int      @id @default(autoincrement())
+  nombre       String   @db.VarChar(100)
+  calories     Int
+  proteina     Int      @default(0)
+  carbohidratos Int     @default(0)
+  grasa        Int      @default(0)
+
+  comidasPlan ComidaPlan[]
+
+  @@map("comidas")
+}
+
+// Tabla de Planes Nutricionales
+model PlanNutricion {
+  id       Int      @id @default(autoincrement())
+  nombre   String   @db.VarChar(100)
+  objetivo String   @map("objetivo") @db.VarChar(50)
+
+  comidasPlan ComidaPlan[]
+
+  @@map("planes_nutricion")
+}
+
+// Tabla de relación muchos a muchos entre Planes Nutricionales y Comidas
+model ComidaPlan {
+  id        Int @id @default(autoincrement())
+  planId    Int @map("plan_id")
+  comidaId  Int @map("comida_id")
+
+  plan   PlanNutricion @relation(fields: [planId], references: [id], onDelete: Cascade)
+  comida Comida        @relation(fields: [comidaId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([comidaId])
+  @@map("comidas_plan")
+}
+
+// Tabla de Progreso
+model Progreso {
+  id     Int      @id @default(autoincrement())
+  fecha  DateTime @db.Date
+  peso   Decimal  @db.Decimal(5, 2)
+  notas  String?  @db.Text
+
+  @@map("progreso")
 }
