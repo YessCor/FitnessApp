@@ -166,6 +166,6 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 <div align="center">
 
-Hecho con ❤️ por [Tu Nombre]
+Hecho con ❤️ por Yess.
 
 </div>
