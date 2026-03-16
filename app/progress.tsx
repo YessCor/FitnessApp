@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { Palette } from '@/constants/theme';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
@@ -31,91 +32,103 @@ export default function ProgressScreen() {
   };
 
   const fmtDate  = (str: string) => new Date(str).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-  const delta    = (cur: number, prev: number) => { const d = cur - prev; return `${d > 0 ? '+' : ''}${d.toFixed(1)} kg`; };
-  const deltaCol = (d: number) => d < 0 ? Palette.success : d > 0 ? Palette.danger : Palette.textMuted;
+  const delta    = (cur: number, prev: number) => { const d = cur - prev; return `${d > 0 ? '+' : ''}${d.toFixed(1)}`; };
+  const deltaIsNeg = (cur: number, prev: number) => cur - prev < 0;
 
-  const current      = progress[0]?.peso ?? 0;
-  const initial      = progress[progress.length - 1]?.peso ?? current;
-  const totalChange  = current - initial;
+  const current     = progress[0]?.peso ?? 0;
+  const initial     = progress[progress.length - 1]?.peso ?? current;
+  const totalChange = current - initial;
 
   // Chart data
-  const weights  = progress.map(p => p.peso);
-  const minW     = Math.min(...weights);
-  const maxW     = Math.max(...weights);
-  const range    = maxW - minW || 1;
-  const barH     = (w: number) => Math.max(12, ((w - minW) / range) * 80);
+  const weights = progress.map(p => p.peso);
+  const minW    = Math.min(...weights);
+  const maxW    = Math.max(...weights);
+  const range   = maxW - minW || 1;
+  const barH    = (w: number) => Math.max(8, ((w - minW) / range) * 72);
 
   return (
     <View style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor={Palette.bgDeep} />
 
+      {/* Header */}
       <View style={s.header}>
         <Link href="/" asChild>
-          <TouchableOpacity style={s.backBtn}><Text style={s.backArrow}>←</Text></TouchableOpacity>
+          <TouchableOpacity style={s.backBtn}>
+            <IconSymbol size={18} name="arrow.left" color={Palette.textPrimary} />
+          </TouchableOpacity>
         </Link>
-        <Text style={s.title}>Progreso</Text>
-        <View style={{ width: 44 }} />
+        <Text style={s.title}>PROGRESO</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       {loading ? (
         <View style={s.loader}><ActivityIndicator size="large" color={Palette.primary} /></View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
+
           {/* Stats */}
           <View style={s.statsRow}>
             <View style={s.statCard}>
-              <Text style={[s.statValue, { color: Palette.primary }]}>{current.toFixed(1)}</Text>
-              <Text style={s.statLabel}>Peso Actual (kg)</Text>
+              <Text style={s.statValue}>{current.toFixed(1)}</Text>
+              <Text style={s.statUnit}>kg</Text>
+              <Text style={s.statLabel}>PESO ACTUAL</Text>
             </View>
             <View style={s.statCard}>
-              <Text style={[s.statValue, { color: deltaCol(totalChange) }]}>
+              <Text style={[s.statValue, { color: totalChange < 0 ? '#4ADE80' : totalChange > 0 ? '#F87171' : Palette.textPrimary }]}>
                 {totalChange > 0 ? '+' : ''}{totalChange.toFixed(1)}
               </Text>
-              <Text style={s.statLabel}>Cambio Total (kg)</Text>
+              <Text style={s.statUnit}>kg</Text>
+              <Text style={s.statLabel}>CAMBIO</Text>
             </View>
             <View style={s.statCard}>
-              <Text style={[s.statValue, { color: Palette.secondary }]}>{progress.length}</Text>
-              <Text style={s.statLabel}>Semanas</Text>
+              <Text style={s.statValue}>{progress.length}</Text>
+              <Text style={s.statUnit}>sem</Text>
+              <Text style={s.statLabel}>REGISTROS</Text>
             </View>
           </View>
 
           {/* Chart */}
           <View style={s.chartCard}>
-            <Text style={s.chartTitle}>Peso a lo Largo del Tiempo</Text>
+            <Text style={s.chartTitle}>EVOLUCIÓN DE PESO</Text>
             <View style={s.chart}>
-              {[...progress].reverse().map((p, i) => (
-                <View key={p.id} style={s.barCol}>
-                  <View style={[s.bar, { height: barH(p.peso), backgroundColor: i === progress.length - 1 ? Palette.primary : Palette.bgElevated }]} />
-                  <Text style={s.barLabel}>{p.peso.toFixed(0)}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={s.chartLegend}>
-              <View style={[s.legendDot, { backgroundColor: Palette.primary }]} />
-              <Text style={s.legendText}>Peso más reciente</Text>
-              <View style={[s.legendDot, { backgroundColor: Palette.bgElevated, marginLeft: 12 }]} />
-              <Text style={s.legendText}>Anteriores</Text>
+              {[...progress].reverse().map((p, i) => {
+                const isLatest = i === progress.length - 1;
+                return (
+                  <View key={p.id} style={s.barCol}>
+                    <View style={[
+                      s.bar,
+                      { height: barH(p.peso) },
+                      isLatest ? s.barActive : s.barInactive,
+                    ]} />
+                    <Text style={[s.barLabel, isLatest && s.barLabelActive]}>
+                      {p.peso.toFixed(0)}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
 
           {/* Historial */}
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Historial</Text>
+            <Text style={s.sectionTitle}>HISTORIAL</Text>
             {progress.map((p, i) => {
               const prevW  = progress[i + 1]?.peso;
-              const change = prevW ? p.peso - prevW : 0;
+              const change = prevW ? delta(p.peso, prevW) : null;
+              const isDown = prevW ? deltaIsNeg(p.peso, prevW) : false;
+
               return (
-                <View key={p.id} style={s.historyCard}>
+                <View key={p.id} style={[s.historyRow, i < progress.length - 1 && s.historyBorder]}>
                   <View style={s.historyLeft}>
                     <Text style={s.historyDate}>{fmtDate(p.fecha)}</Text>
                     {p.notas && <Text style={s.historyNote}>{p.notas}</Text>}
                   </View>
                   <View style={s.historyRight}>
                     <Text style={s.historyWeight}>{p.peso.toFixed(1)} <Text style={s.historyUnit}>kg</Text></Text>
-                    {i < progress.length - 1 && prevW && (
-                      <View style={[s.changeBadge, { backgroundColor: deltaCol(change) + '22' }]}>
-                        <Text style={[s.changeText, { color: deltaCol(change) }]}>{delta(p.peso, prevW)}</Text>
-                      </View>
+                    {change && (
+                      <Text style={[s.historyDelta, { color: isDown ? '#4ADE80' : '#F87171' }]}>
+                        {change} kg
+                      </Text>
                     )}
                   </View>
                 </View>
@@ -123,7 +136,7 @@ export default function ProgressScreen() {
             })}
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 80 }} />
         </ScrollView>
       )}
     </View>
@@ -136,53 +149,61 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16,
+    paddingHorizontal: 20, paddingTop: 52, paddingBottom: 20,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: Palette.bgElevated, borderWidth: 1, borderColor: Palette.border,
+    width: 40, height: 40, borderRadius: 10,
+    backgroundColor: Palette.bgElevated, borderWidth: 0.5, borderColor: Palette.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  backArrow: { color: Palette.textPrimary, fontSize: 20 },
-  title:     { fontSize: 22, fontWeight: '800', color: Palette.textPrimary },
+  title: { fontSize: 12, fontWeight: '700', color: Palette.textPrimary, letterSpacing: 2 },
 
-  statsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 10, marginBottom: 20 },
+  statsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 8, marginBottom: 20 },
   statCard: {
     flex: 1, backgroundColor: Palette.bgCard,
-    borderRadius: 16, paddingVertical: 16, alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
+    borderRadius: 12, paddingVertical: 18, alignItems: 'center',
+    borderWidth: 0.5, borderColor: Palette.border,
   },
-  statValue: { fontSize: 22, fontWeight: '800', marginBottom: 4 },
-  statLabel: { fontSize: 10, color: Palette.textSecondary, fontWeight: '500', textAlign: 'center' },
+  statValue: { fontSize: 22, fontWeight: '700', color: Palette.textPrimary },
+  statUnit:  { fontSize: 10, color: Palette.textMuted, fontWeight: '600', marginBottom: 6 },
+  statLabel: { fontSize: 9,  color: Palette.textMuted, fontWeight: '700', letterSpacing: 1 },
 
   chartCard: {
     marginHorizontal: 20, backgroundColor: Palette.bgCard,
-    borderRadius: 20, padding: 18, marginBottom: 24,
-    borderWidth: 1, borderColor: Palette.border,
+    borderRadius: 14, padding: 18, marginBottom: 24,
+    borderWidth: 0.5, borderColor: Palette.border,
   },
-  chartTitle: { color: Palette.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 16 },
-  chart:      { flexDirection: 'row', height: 100, alignItems: 'flex-end', justifyContent: 'space-around', marginBottom: 12 },
-  barCol:     { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
-  bar:        { width: 26, borderRadius: 8, marginBottom: 4 },
-  barLabel:   { color: Palette.textMuted, fontSize: 9 },
-  chartLegend:{ flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  legendDot:  { width: 8, height: 8, borderRadius: 4, marginRight: 5 },
-  legendText: { color: Palette.textSecondary, fontSize: 11 },
+  chartTitle: {
+    color: Palette.textMuted, fontSize: 9, fontWeight: '700',
+    letterSpacing: 1.5, marginBottom: 20,
+  },
+  chart: {
+    flexDirection: 'row', height: 88, alignItems: 'flex-end',
+    justifyContent: 'space-around',
+  },
+  barCol:        { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  bar:           { width: 22, borderRadius: 4, marginBottom: 6 },
+  barActive:     { backgroundColor: Palette.textPrimary },
+  barInactive:   { backgroundColor: Palette.bgElevated, borderWidth: 0.5, borderColor: Palette.border },
+  barLabel:      { color: Palette.textMuted, fontSize: 9, fontWeight: '600' },
+  barLabelActive:{ color: Palette.textPrimary },
 
   section:      { paddingHorizontal: 20 },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: Palette.textPrimary, marginBottom: 14 },
-
-  historyCard: {
-    backgroundColor: Palette.bgCard, borderRadius: 16, padding: 16, marginBottom: 10,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
+  sectionTitle: {
+    fontSize: 10, fontWeight: '700', color: Palette.textMuted,
+    letterSpacing: 1.5, marginBottom: 14,
   },
+
+  historyRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 16,
+  },
+  historyBorder: { borderBottomWidth: 0.5, borderBottomColor: Palette.border },
   historyLeft:   { flex: 1 },
-  historyDate:   { color: Palette.textPrimary,   fontSize: 13, fontWeight: '700', marginBottom: 3 },
-  historyNote:   { color: Palette.textSecondary, fontSize: 11, fontStyle: 'italic' },
-  historyRight:  { alignItems: 'flex-end', gap: 6 },
-  historyWeight: { color: Palette.textPrimary, fontSize: 24, fontWeight: '800' },
-  historyUnit:   { fontSize: 14, color: Palette.textSecondary },
-  changeBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  changeText:    { fontSize: 11, fontWeight: '700' },
+  historyDate:   { color: Palette.textPrimary, fontSize: 13, fontWeight: '600', marginBottom: 3 },
+  historyNote:   { color: Palette.textMuted, fontSize: 11 },
+  historyRight:  { alignItems: 'flex-end', gap: 4 },
+  historyWeight: { color: Palette.textPrimary, fontSize: 22, fontWeight: '700' },
+  historyUnit:   { fontSize: 12, color: Palette.textMuted },
+  historyDelta:  { fontSize: 11, fontWeight: '700' },
 });

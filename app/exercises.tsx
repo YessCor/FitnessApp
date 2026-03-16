@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { Palette } from '@/constants/theme';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
@@ -17,25 +18,33 @@ interface Exercise {
 
 const DEFAULT_EXERCISES: Exercise[] = [
   { id: 1, nombre: 'Press de Banca',  grupo_muscular: 'Pecho',    descripcion: 'Ejercicio para pectorales' },
-  { id: 2, nombre: 'Sentadillas',     grupo_muscular: 'Piernas',  descripcion: 'Ejercicio para cuadriceps y gluteos' },
-  { id: 3, nombre: 'Peso Muerto',     grupo_muscular: 'Espalda',  descripcion: 'Ejercicio para espalda baja' },
-  { id: 4, nombre: 'Press Militar',   grupo_muscular: 'Hombros',  descripcion: 'Ejercicio para hombros' },
-  { id: 5, nombre: 'Dominadas',       grupo_muscular: 'Espalda',  descripcion: 'Ejercicio para espalda y biceps' },
-  { id: 6, nombre: 'Curl de Bíceps',  grupo_muscular: 'Brazos',   descripcion: 'Ejercicio para biceps' },
-  { id: 7, nombre: 'Extensiones',     grupo_muscular: 'Tríceps',  descripcion: 'Ejercicio para triceps' },
-  { id: 8, nombre: 'Crunches',        grupo_muscular: 'Abdomen',  descripcion: 'Ejercicio para abdomen' },
+  { id: 2, nombre: 'Sentadillas',     grupo_muscular: 'Piernas',  descripcion: 'Cuadriceps y glúteos' },
+  { id: 3, nombre: 'Peso Muerto',     grupo_muscular: 'Espalda',  descripcion: 'Espalda baja' },
+  { id: 4, nombre: 'Press Militar',   grupo_muscular: 'Hombros',  descripcion: 'Hombros' },
+  { id: 5, nombre: 'Dominadas',       grupo_muscular: 'Espalda',  descripcion: 'Espalda y bíceps' },
+  { id: 6, nombre: 'Curl de Bíceps',  grupo_muscular: 'Brazos',   descripcion: 'Bíceps' },
+  { id: 7, nombre: 'Extensiones',     grupo_muscular: 'Tríceps',  descripcion: 'Tríceps' },
+  { id: 8, nombre: 'Crunches',        grupo_muscular: 'Abdomen',  descripcion: 'Abdomen' },
 ];
 
-const MUSCLE_ICONS: Record<string, string> = {
-  Pecho: '🫀', Piernas: '🦵', Espalda: '🔙', Hombros: '💪',
-  Brazos: '💪', Tríceps: '💪', Abdomen: '🏃', default: '🏋️',
+type MuscleIconName = 'dumbbell.fill' | 'figure.run' | 'figure.strengthtraining.traditional' | 'figure.walk' | 'figure.core.training' | 'bolt.fill';
+
+const MUSCLE_ICONS: Record<string, MuscleIconName> = {
+  Pecho:   'dumbbell.fill',
+  Piernas: 'figure.run',
+  Espalda: 'figure.strengthtraining.traditional',
+  Hombros: 'bolt.fill',
+  Brazos:  'dumbbell.fill',
+  Tríceps: 'dumbbell.fill',
+  Abdomen: 'figure.core.training',
+  default: 'dumbbell.fill',
 };
 
 const muscleGroups = ['Pecho', 'Piernas', 'Espalda', 'Hombros', 'Brazos', 'Tríceps', 'Abdomen'];
 
 export default function ExercisesScreen() {
-  const [exercises,     setExercises]     = useState<Exercise[]>(DEFAULT_EXERCISES);
-  const [loading,       setLoading]       = useState(false);
+  const [exercises,      setExercises]      = useState<Exercise[]>(DEFAULT_EXERCISES);
+  const [loading,        setLoading]        = useState(false);
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
 
   useEffect(() => { fetchExercises(); }, []);
@@ -61,11 +70,11 @@ export default function ExercisesScreen() {
       <View style={s.header}>
         <Link href="/" asChild>
           <TouchableOpacity style={s.backBtn}>
-            <Text style={s.backArrow}>←</Text>
+            <IconSymbol size={18} name="arrow.left" color={Palette.textPrimary} />
           </TouchableOpacity>
         </Link>
-        <Text style={s.title}>Ejercicios</Text>
-        <View style={{ width: 44 }} />
+        <Text style={s.title}>EJERCICIOS</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       {/* Filtros */}
@@ -90,25 +99,32 @@ export default function ExercisesScreen() {
         ))}
       </ScrollView>
 
+      {/* Divider */}
+      <View style={s.divider} />
+
       {loading ? (
         <View style={s.loader}>
           <ActivityIndicator size="large" color={Palette.primary} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={s.grid}>
-          {filtered.map((ex) => (
-            <View key={ex.id} style={s.card}>
+        <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
+          {filtered.map((ex, i) => (
+            <View key={ex.id} style={[s.row, i < filtered.length - 1 && s.rowBorder]}>
               <View style={s.iconWrap}>
-                <Text style={s.iconText}>{MUSCLE_ICONS[ex.grupo_muscular] ?? MUSCLE_ICONS.default}</Text>
+                <IconSymbol
+                  size={18}
+                  name={MUSCLE_ICONS[ex.grupo_muscular] ?? MUSCLE_ICONS.default}
+                  color={Palette.textSecondary}
+                />
               </View>
               <View style={s.info}>
                 <Text style={s.name}>{ex.nombre}</Text>
-                <View style={s.badge}>
-                  <Text style={s.badgeText}>{ex.grupo_muscular}</Text>
-                </View>
+                {ex.descripcion && <Text style={s.desc}>{ex.descripcion}</Text>}
               </View>
+              <Text style={s.muscle}>{ex.grupo_muscular.toUpperCase()}</Text>
             </View>
           ))}
+          <View style={{ height: 80 }} />
         </ScrollView>
       )}
     </View>
@@ -117,46 +133,51 @@ export default function ExercisesScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Palette.bgDeep },
+
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: Palette.bgElevated, borderWidth: 1, borderColor: Palette.border,
+    width: 40, height: 40, borderRadius: 10,
+    backgroundColor: Palette.bgElevated, borderWidth: 0.5, borderColor: Palette.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  backArrow: { color: Palette.textPrimary, fontSize: 20 },
-  title:     { fontSize: 22, fontWeight: '800', color: Palette.textPrimary },
-
-  filterBar:    { maxHeight: 52 },
-  filterContent: { paddingHorizontal: 20, gap: 8, flexDirection: 'row' },
-  chip: {
-    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 12,
-    backgroundColor: Palette.bgElevated, marginRight: 8,
-    borderWidth: 1, borderColor: Palette.border,
+  title: {
+    fontSize: 12, fontWeight: '700', color: Palette.textPrimary, letterSpacing: 2,
   },
-  chipActive:     { backgroundColor: Palette.primary, borderColor: Palette.primary },
-  chipText:       { color: Palette.textSecondary, fontSize: 13, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
+
+  filterBar:    { maxHeight: 48, flexGrow: 0 },
+  filterContent: { paddingHorizontal: 20, gap: 6, alignItems: 'center' },
+  chip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 0.5, borderColor: Palette.border,
+    marginRight: 6,
+  },
+  chipActive:     { backgroundColor: Palette.bgElevated, borderColor: Palette.borderLight },
+  chipText:       { color: Palette.textMuted, fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: Palette.textPrimary },
+
+  divider: { height: 0.5, backgroundColor: Palette.border, marginHorizontal: 20, marginTop: 14, marginBottom: 4 },
 
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  grid: { padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  list: { paddingHorizontal: 20, paddingTop: 4 },
 
-  card: {
-    backgroundColor: Palette.bgCard, borderRadius: 18, padding: 14,
-    width: '47%', flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 16,
   },
+  rowBorder: { borderBottomWidth: 0.5, borderBottomColor: Palette.border },
   iconWrap: {
-    width: 48, height: 48, borderRadius: 14,
-    backgroundColor: Palette.primaryGlow,
-    justifyContent: 'center', alignItems: 'center', marginRight: 10,
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: Palette.bgElevated,
+    borderWidth: 0.5, borderColor: Palette.border,
+    justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  iconText: { fontSize: 22 },
-  info:     { flex: 1 },
-  name:     { color: Palette.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 6, lineHeight: 17 },
-  badge:    { backgroundColor: Palette.primaryGlow, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, alignSelf: 'flex-start' },
-  badgeText:{ color: Palette.primary, fontSize: 10, fontWeight: '700' },
+  info:   { flex: 1 },
+  name:   { color: Palette.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  desc:   { color: Palette.textMuted, fontSize: 11 },
+  muscle: { color: Palette.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 1 },
 });

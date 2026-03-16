@@ -14,10 +14,44 @@ type IconSymbolName = keyof typeof MAPPING;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
+  // — Navigation & UI —
+  'house.fill':                               'home',
+  'paperplane.fill':                          'send',
+  'chevron.left.forwardslash.chevron.right':  'code',
+  'chevron.right':                            'chevron-right',
+  'chevron.left':                             'chevron-left',
+  'chevron.up':                               'expand-less',
+  'chevron.down':                             'expand-more',
+  'list.bullet':                              'format-list-bulleted',
+  'arrow.left':                               'arrow-back',
+
+  // — Fitness / Exercises —
+  'dumbbell.fill':                            'fitness-center',
+  'figure.walk':                              'directions-walk',
+  'bolt.fill':                                'flash-on',
+  'flame.fill':                               'local-fire-department',
+
+  // — Nutrition —
+  'fork.knife':                               'restaurant',
+  'leaf.fill':                                'eco',
+  'scalemass.fill':                           'scale',
+
+  // — Wellness / Recommendations —
+  'drop.fill':                                'water-drop',
+  'moon.fill':                                'nights-stay',
+  'sun.max.fill':                             'wb-sunny',
+  'heart.fill':                               'favorite',
+  'star.fill':                                'star',
+
+  // — Progress —
+  'chart.bar.fill':                           'bar-chart',
+  'trophy.fill':                              'emoji-events',
+  'clock.fill':                               'schedule',
+
+  // — Muscle Groups —
+  'figure.strengthtraining.traditional':      'sports-gymnastics',
+  'figure.run':                               'directions-run',
+  'figure.core.training':                     'self-improvement',
 } as IconMapping;
 
 /**

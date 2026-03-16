@@ -1,68 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
+  ScrollView, View, Text, StyleSheet,
+  TouchableOpacity, StatusBar,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Palette } from '@/constants/theme';
+import { useAppTheme } from '@/hooks/ThemeContext';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
-interface Plan {
-  id: number;
-  nombre: string;
-  nivel: string;
-  duracion_semanas: number;
-}
-
-interface Exercise {
-  id: number;
-  nombre: string;
-  grupo_muscular: string;
-}
-
-interface Meal {
-  id: number;
-  nombre: string;
-  calorias: number;
-}
+interface Plan     { id: number; nombre: string; nivel: string; duracion_semanas: number; }
+interface Exercise { id: number; nombre: string; grupo_muscular: string; }
+interface Meal     { id: number; nombre: string; calorias: number; }
 
 const DEFAULT_PLANS: Plan[] = [
-  { id: 1, nombre: 'Plan Principiante', nivel: 'Básico', duracion_semanas: 4 },
-  { id: 2, nombre: 'Plan Intermedio',   nivel: 'Medio',  duracion_semanas: 8 },
+  { id: 1, nombre: 'Plan Principiante', nivel: 'Básico',  duracion_semanas: 4  },
+  { id: 2, nombre: 'Plan Intermedio',   nivel: 'Medio',   duracion_semanas: 8  },
   { id: 3, nombre: 'Plan Avanzado',     nivel: 'Experto', duracion_semanas: 12 },
 ];
 
 const DEFAULT_EXERCISES: Exercise[] = [
-  { id: 1, nombre: 'Press de Banca', grupo_muscular: 'Pecho' },
+  { id: 1, nombre: 'Press de Banca', grupo_muscular: 'Pecho'   },
   { id: 2, nombre: 'Sentadillas',    grupo_muscular: 'Piernas' },
   { id: 3, nombre: 'Peso Muerto',    grupo_muscular: 'Espalda' },
 ];
 
 const DEFAULT_MEALS: Meal[] = [
-  { id: 1, nombre: 'Desayuno Proteico',    calorias: 450 },
-  { id: 2, nombre: 'Almuerzo Balanceado',  calorias: 650 },
-  { id: 3, nombre: 'Cena Ligera',          calorias: 350 },
+  { id: 1, nombre: 'Desayuno Proteico',   calorias: 450 },
+  { id: 2, nombre: 'Almuerzo Balanceado', calorias: 650 },
+  { id: 3, nombre: 'Cena Ligera',         calorias: 350 },
 ];
 
-const RECOMMENDATIONS = [
-  { id: 1, title: 'Hidratación',   description: 'Bebe al menos 2 litros de agua al día',        icon: '💧', color: Palette.secondary },
-  { id: 2, title: 'Descanso',      description: 'Duerme entre 7-8 horas para recuperarte',      icon: '😴', color: Palette.accent },
-  { id: 3, title: 'Calentamiento', description: 'Siempre calienta antes de entrenar',           icon: '🔥', color: Palette.primary },
+const TIPS: { id: number; label: string; value: string; icon: 'drop.fill' | 'moon.fill' | 'flame.fill' }[] = [
+  { id: 1, label: 'Hidratación',   value: '2L / día', icon: 'drop.fill'  },
+  { id: 2, label: 'Descanso',      value: '7–8 horas', icon: 'moon.fill'  },
+  { id: 3, label: 'Calentamiento', value: 'Siempre',   icon: 'flame.fill' },
 ];
-
-const LEVEL_COLORS: Record<string, string> = {
-  'Básico':  Palette.secondary,
-  'Medio':   Palette.warning,
-  'Experto': Palette.danger,
-};
 
 export default function HomeScreen() {
+  const { palette, isDark, toggleTheme } = useAppTheme();
+  const router = useRouter();
   const [plans,     setPlans]     = useState<Plan[]>(DEFAULT_PLANS);
   const [exercises, setExercises] = useState<Exercise[]>(DEFAULT_EXERCISES);
   const [meals,     setMeals]     = useState<Meal[]>(DEFAULT_MEALS);
@@ -80,270 +57,241 @@ export default function HomeScreen() {
     try { const d = await tryFetch(`${API_BASE}/comidas`);   if (d.length) setMeals(d);     } catch {}
   };
 
+  const totalCal = DEFAULT_MEALS.reduce((s, m) => s + m.calorias, 0);
+
   return (
-    <View style={s.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Palette.bgDeep} />
+    <View style={[s.container, { backgroundColor: palette.bgDeep }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={palette.bgDeep} />
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
         <View style={s.header}>
           <View>
-            <Text style={s.greeting}>Bienvenido 👋</Text>
-            <Text style={s.appTitle}>FitnessApp</Text>
+            <Text style={[s.greeting, { color: palette.textMuted }]}>Bienvenido de vuelta</Text>
+            <Text style={[s.appTitle, { color: palette.textPrimary }]}>FitnessApp</Text>
           </View>
-          <Link href="/exercises" asChild>
-            <TouchableOpacity style={s.headerBtn}>
-              <IconSymbol size={22} name="list.bullet" color={Palette.primary} />
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity
+            style={[s.themeBtn, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <IconSymbol size={22} name={isDark ? 'sun.max.fill' : 'moon.fill'} color={palette.textPrimary} />
+          </TouchableOpacity>
         </View>
 
-        {/* ── Hero Banner ── */}
-        <View style={s.heroBanner}>
-          <View style={s.heroAccentLine} />
-          <Text style={s.heroTitle}>¡Comienza tu{'\n'}transformación! 💪</Text>
-          <Text style={s.heroSub}>La consistencia es la clave del éxito</Text>
+        {/* ── Hero Card ── */}
+        <View style={[s.heroCard, { backgroundColor: palette.primary }]}>
+          <View style={s.heroContent}>
+            <Text style={s.heroEyebrow}>HOY</Text>
+            <Text style={s.heroTitle}>¡A entrenar!</Text>
+            <Text style={s.heroSub}>La consistencia es la clave del éxito</Text>
+          </View>
+          <View style={s.heroCircle}>
+            <IconSymbol size={36} name="dumbbell.fill" color="rgba(255,255,255,0.25)" />
+          </View>
         </View>
 
         {/* ── Stats ── */}
         <View style={s.statsRow}>
           {[
-            { value: '3',    label: 'Racha',     color: Palette.primary },
-            { value: '12',   label: 'Ejercicios', color: Palette.secondary },
-            { value: '1,450', label: 'Kcal Hoy',  color: Palette.accent },
+            { value: '3',             label: 'Días de racha',   accent: true  },
+            { value: '12',            label: 'Ejercicios',      accent: false },
+            { value: `${totalCal}`,   label: 'Kcal hoy',        accent: false },
           ].map((stat) => (
-            <View key={stat.label} style={s.statCard}>
-              <Text style={[s.statValue, { color: stat.color }]}>{stat.value}</Text>
-              <Text style={s.statLabel}>{stat.label}</Text>
+            <View
+              key={stat.label}
+              style={[
+                s.statCard,
+                {
+                  backgroundColor: stat.accent ? palette.primaryGlow : palette.bgCard,
+                  borderColor:     stat.accent ? palette.primary : palette.border,
+                },
+              ]}
+            >
+              <Text style={[s.statValue, { color: stat.accent ? palette.primary : palette.textPrimary }]}>
+                {stat.value}
+              </Text>
+              <Text style={[s.statLabel, { color: palette.textMuted }]}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* ── Nav rápida ── */}
-        <View style={s.navRow}>
-          <Link href="/nutrition" asChild>
-            <TouchableOpacity style={[s.navBtn, { borderColor: Palette.secondary }]}>
-              <Text style={s.navIcon}>🥗</Text>
-              <Text style={[s.navText, { color: Palette.secondary }]}>Nutrición</Text>
-            </TouchableOpacity>
-          </Link>
-          <Link href="/progress" asChild>
-            <TouchableOpacity style={[s.navBtn, { borderColor: Palette.primary }]}>
-              <Text style={s.navIcon}>📊</Text>
-              <Text style={[s.navText, { color: Palette.primary }]}>Progreso</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-
-        {/* ── Recomendaciones ── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Recomendaciones del Día</Text>
-          {RECOMMENDATIONS.map((rec) => (
-            <View key={rec.id} style={s.recCard}>
-              <View style={[s.recIconWrap, { backgroundColor: rec.color + '22' }]}>
-                <Text style={s.recIconText}>{rec.icon}</Text>
+        {/* ── Tips ── */}
+        <View style={[s.section, { borderColor: palette.border }]}>
+          <Text style={[s.sectionTitle, { color: palette.textMuted }]}>RECOMENDACIONES</Text>
+          {TIPS.map((tip, i) => (
+            <View
+              key={tip.id}
+              style={[s.tipRow, i < TIPS.length - 1 && { borderBottomWidth: 0.5, borderBottomColor: palette.border }]}
+            >
+              <View style={[s.tipIcon, { backgroundColor: palette.primaryGlow }]}>
+                <IconSymbol size={16} name={tip.icon} color={palette.primary} />
               </View>
-              <View style={s.recContent}>
-                <Text style={s.recTitle}>{rec.title}</Text>
-                <Text style={s.recDesc}>{rec.description}</Text>
-              </View>
-              <View style={[s.recAccent, { backgroundColor: rec.color }]} />
+              <Text style={[s.tipLabel, { color: palette.textSecondary }]}>{tip.label}</Text>
+              <Text style={[s.tipValue, { color: palette.textPrimary }]}>{tip.value}</Text>
             </View>
           ))}
         </View>
 
-        {/* ── Planes de Entrenamiento ── */}
+        {/* ── Planes ── */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Planes de Entrenamiento</Text>
+          <Text style={[s.sectionTitle, { color: palette.textMuted }]}>PLANES DE ENTRENAMIENTO</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
-            {plans.map((plan) => (
-              <Link key={plan.id} href={`/plan/${plan.id}`} asChild>
-                <TouchableOpacity style={s.planCard}>
-                  <View style={[s.planLevelDot, { backgroundColor: LEVEL_COLORS[plan.nivel] ?? Palette.accent }]} />
-                  <Text style={s.planName}>{plan.nombre}</Text>
+            {plans.map((plan, i) => {
+              const isFeatured = i === 0;
+              return (
+                <TouchableOpacity
+                  key={plan.id}
+                  activeOpacity={0.8}
+                  onPress={() => router.push(`/plan/${plan.id}` as any)}
+                  style={[
+                    s.planCard,
+                    {
+                      backgroundColor: isFeatured ? palette.primary : palette.bgCard,
+                      borderColor:     isFeatured ? palette.primaryDark : palette.borderLight,
+                      borderWidth:     1,
+                      // Explicit shadow so cards pop in both modes
+                      shadowColor:     isFeatured ? palette.primary : '#000',
+                      shadowOffset:    { width: 0, height: 4 },
+                      shadowOpacity:   isFeatured ? 0.5 : 0.12,
+                      shadowRadius:    10,
+                      elevation:       isFeatured ? 8 : 3,
+                    },
+                  ]}
+                >
+                  {/* Left accent stripe on non-featured */}
+                  {!isFeatured && (
+                    <View style={[s.planStripe, { backgroundColor: palette.primary }]} />
+                  )}
+
+                  <Text style={[s.planNivel, { color: isFeatured ? 'rgba(255,255,255,0.7)' : palette.primary }]}>
+                    {plan.nivel.toUpperCase()}
+                  </Text>
+                  <Text style={[s.planName, { color: isFeatured ? '#FFFFFF' : palette.textPrimary }]}>
+                    {plan.nombre}
+                  </Text>
+
                   <View style={s.planFooter}>
-                    <View style={[s.planBadge, { backgroundColor: (LEVEL_COLORS[plan.nivel] ?? Palette.accent) + '33' }]}>
-                      <Text style={[s.planBadgeText, { color: LEVEL_COLORS[plan.nivel] ?? Palette.accent }]}>
-                        {plan.nivel}
+                    <View style={[s.planDurPill, { backgroundColor: isFeatured ? 'rgba(0,0,0,0.2)' : palette.bgElevated }]}>
+                      <Text style={[s.planDur, { color: isFeatured ? '#FFFFFF' : palette.textSecondary }]}>
+                        {plan.duracion_semanas} sem
                       </Text>
                     </View>
-                    <Text style={s.planDur}>{plan.duracion_semanas} sem</Text>
+                    <IconSymbol size={14} name="chevron.right" color={isFeatured ? 'rgba(255,255,255,0.8)' : palette.primary} />
                   </View>
                 </TouchableOpacity>
-              </Link>
-            ))}
+              );
+            })}
           </ScrollView>
         </View>
 
-        {/* ── Ejercicios Populares ── */}
+
+        {/* ── Ejercicios recientes ── */}
         <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>Ejercicios Populares</Text>
-            <Link href="/exercises">
-              <Text style={s.seeAll}>Ver todos →</Text>
-            </Link>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
-            {exercises.map((ex) => (
-              <View key={ex.id} style={s.exCard}>
-                <View style={s.exIconWrap}>
-                  <Text style={s.exIcon}>🏋️</Text>
-                </View>
-                <Text style={s.exName}>{ex.nombre}</Text>
-                <View style={s.exMuscleBadge}>
-                  <Text style={s.exMuscleText}>{ex.grupo_muscular}</Text>
-                </View>
+          <Text style={[s.sectionTitle, { color: palette.textMuted }]}>EJERCICIOS RECIENTES</Text>
+          {exercises.map((ex, i) => (
+            <View
+              key={ex.id}
+              style={[
+                s.listRow,
+                i < exercises.length - 1 && { borderBottomWidth: 0.5, borderBottomColor: palette.border },
+              ]}
+            >
+              <View style={[s.listIcon, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}>
+                <IconSymbol size={16} name="dumbbell.fill" color={palette.primary} />
               </View>
-            ))}
-          </ScrollView>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.listTitle, { color: palette.textPrimary }]}>{ex.nombre}</Text>
+                <Text style={[s.listSub,   { color: palette.textMuted }]}>{ex.grupo_muscular}</Text>
+              </View>
+              <IconSymbol size={14} name="chevron.right" color={palette.textMuted} />
+            </View>
+          ))}
         </View>
 
-        {/* ── Nutrición ── */}
+        {/* ── Comidas de hoy ── */}
         <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>Nutrición</Text>
-            <Link href="/nutrition">
-              <Text style={s.seeAll}>Ver todos →</Text>
-            </Link>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
-            {meals.map((meal) => (
-              <View key={meal.id} style={s.mealCard}>
-                <View style={s.mealIconWrap}>
-                  <Text style={s.mealIcon}>🍽️</Text>
-                </View>
-                <Text style={s.mealName}>{meal.nombre}</Text>
-                <Text style={s.mealCal}>{meal.calorias} kcal</Text>
+          <Text style={[s.sectionTitle, { color: palette.textMuted }]}>COMIDAS DE HOY</Text>
+          {meals.map((meal, i) => (
+            <View
+              key={meal.id}
+              style={[
+                s.listRow,
+                i < meals.length - 1 && { borderBottomWidth: 0.5, borderBottomColor: palette.border },
+              ]}
+            >
+              <View style={[s.listIcon, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}>
+                <IconSymbol size={16} name="fork.knife" color={palette.primary} />
               </View>
-            ))}
-          </ScrollView>
+              <Text style={[s.listTitle, { color: palette.textPrimary, flex: 1 }]}>{meal.nombre}</Text>
+              <Text style={[s.calBadge, { color: palette.primary }]}>{meal.calorias} kcal</Text>
+            </View>
+          ))}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: Palette.bgDeep },
-  scroll:      { flex: 1 },
+  container: { flex: 1 },
+  scroll:    { flex: 1 },
 
-  // Header
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 52, paddingBottom: 8,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20,
   },
-  greeting:  { fontSize: 13, color: Palette.textSecondary, letterSpacing: 0.5, marginBottom: 2 },
-  appTitle:  { fontSize: 30, fontWeight: '800', color: Palette.textPrimary, letterSpacing: -0.5 },
-  headerBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: Palette.bgElevated,
-    borderWidth: 1, borderColor: Palette.border,
-    justifyContent: 'center', alignItems: 'center',
+  greeting:  { fontSize: 13, fontWeight: '500', letterSpacing: 0.2, marginBottom: 4 },
+  appTitle:  { fontSize: 32, fontWeight: '800', letterSpacing: -0.8 },
+  themeBtn:  {
+    width: 44, height: 44, borderRadius: 14, marginTop: 4,
+    borderWidth: 0.5, justifyContent: 'center', alignItems: 'center',
   },
 
-  // Hero
-  heroBanner: {
-    marginHorizontal: 20, marginTop: 16, marginBottom: 24,
-    backgroundColor: Palette.bgCard,
-    borderRadius: 22, padding: 22,
-    borderWidth: 1, borderColor: Palette.border,
+  // Hero card
+  heroCard: {
+    marginHorizontal: 20, borderRadius: 20, padding: 24,
+    marginBottom: 20, flexDirection: 'row', alignItems: 'center',
     overflow: 'hidden',
   },
-  heroAccentLine: {
-    position: 'absolute', left: 0, top: 0, bottom: 0,
-    width: 4, backgroundColor: Palette.primary, borderTopLeftRadius: 22, borderBottomLeftRadius: 22,
-  },
-  heroTitle: { fontSize: 24, fontWeight: '800', color: Palette.textPrimary, lineHeight: 32, marginBottom: 8, paddingLeft: 8 },
-  heroSub:   { fontSize: 13, color: Palette.textSecondary, paddingLeft: 8 },
+  heroContent: { flex: 1 },
+  heroEyebrow: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.6)', letterSpacing: 2, marginBottom: 6 },
+  heroTitle:   { fontSize: 26, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5, marginBottom: 6 },
+  heroSub:     { fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 18 },
+  heroCircle:  { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.12)', justifyContent: 'center', alignItems: 'center' },
 
   // Stats
-  statsRow: {
-    flexDirection: 'row', marginHorizontal: 20,
-    gap: 10, marginBottom: 20,
-  },
-  statCard: {
-    flex: 1, backgroundColor: Palette.bgCard,
-    borderRadius: 16, paddingVertical: 16, alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
-  },
+  statsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 8, marginBottom: 28 },
+  statCard: { flex: 1, borderRadius: 14, paddingVertical: 16, alignItems: 'center', borderWidth: 1 },
   statValue: { fontSize: 22, fontWeight: '800', marginBottom: 4 },
-  statLabel: { fontSize: 11, color: Palette.textSecondary, fontWeight: '500' },
-
-  // Nav rápida
-  navRow: { flexDirection: 'row', marginHorizontal: 20, gap: 12, marginBottom: 28 },
-  navBtn: {
-    flex: 1, backgroundColor: Palette.bgCard,
-    borderRadius: 18, paddingVertical: 18, alignItems: 'center',
-    borderWidth: 1.5,
-  },
-  navIcon: { fontSize: 28, marginBottom: 6 },
-  navText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
+  statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textAlign: 'center' },
 
   // Section
-  section: { marginBottom: 28 },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: Palette.textPrimary, marginHorizontal: 20, marginBottom: 14, letterSpacing: 0.2 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginBottom: 14 },
-  seeAll: { color: Palette.primary, fontSize: 13, fontWeight: '600' },
-  hScroll: { paddingHorizontal: 20 },
+  section: { paddingHorizontal: 20, marginBottom: 28 },
+  sectionTitle: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 16 },
+  hScroll: { paddingRight: 20 },
 
-  // Recomendaciones
-  recCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Palette.bgCard, marginHorizontal: 20, marginBottom: 10,
-    borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: Palette.border,
-    overflow: 'hidden',
-  },
-  recIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  recIconText: { fontSize: 22 },
-  recContent: { flex: 1 },
-  recTitle:   { color: Palette.textPrimary,   fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  recDesc:    { color: Palette.textSecondary, fontSize: 12 },
-  recAccent:  { position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, borderTopRightRadius: 16, borderBottomRightRadius: 16 },
+  // Tips
+  tipRow:   { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 12 },
+  tipIcon:  { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  tipLabel: { flex: 1, fontSize: 13, fontWeight: '500' },
+  tipValue: { fontSize: 13, fontWeight: '700' },
 
   // Plan cards
-  planCard: {
-    backgroundColor: Palette.bgCard, borderRadius: 18, padding: 16,
-    marginRight: 12, width: 158,
-    borderWidth: 1, borderColor: Palette.border,
-  },
-  planLevelDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 10 },
-  planName:     { color: Palette.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 14, lineHeight: 20 },
-  planFooter:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  planBadge:    { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  planBadgeText:{ fontSize: 10, fontWeight: '700' },
-  planDur:      { color: Palette.textMuted, fontSize: 11 },
+  planCard:    { borderRadius: 16, padding: 18, marginRight: 12, width: 162, overflow: 'hidden' },
+  planStripe:  { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 },
+  planNivel:   { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, marginBottom: 8, marginLeft: 4 },
+  planName:    { fontSize: 14, fontWeight: '700', marginBottom: 16, lineHeight: 20, marginLeft: 4 },
+  planFooter:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  planDurPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  planDur:     { fontSize: 11, fontWeight: '600' },
 
-  // Exercise cards
-  exCard: {
-    backgroundColor: Palette.bgCard, borderRadius: 18, padding: 16,
-    marginRight: 12, width: 120, alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
-  },
-  exIconWrap: {
-    width: 52, height: 52, borderRadius: 16,
-    backgroundColor: Palette.primaryGlow,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
-  },
-  exIcon:        { fontSize: 26 },
-  exName:        { color: Palette.textPrimary,   fontSize: 12, fontWeight: '700', textAlign: 'center', marginBottom: 8, lineHeight: 16 },
-  exMuscleBadge: { backgroundColor: Palette.primaryGlow, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  exMuscleText:  { color: Palette.primary, fontSize: 10, fontWeight: '600' },
-
-  // Meal cards
-  mealCard: {
-    backgroundColor: Palette.bgCard, borderRadius: 18, padding: 16,
-    marginRight: 12, width: 120, alignItems: 'center',
-    borderWidth: 1, borderColor: Palette.border,
-  },
-  mealIconWrap: {
-    width: 52, height: 52, borderRadius: 16,
-    backgroundColor: Palette.secondaryGlow,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
-  },
-  mealIcon: { fontSize: 26 },
-  mealName: { color: Palette.textPrimary,   fontSize: 12, fontWeight: '700', textAlign: 'center', marginBottom: 6, lineHeight: 16 },
-  mealCal:  { color: Palette.secondary, fontSize: 12, fontWeight: '700' },
+  // List rows
+  listRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 12 },
+  listIcon: { width: 38, height: 38, borderRadius: 10, borderWidth: 0.5, justifyContent: 'center', alignItems: 'center' },
+  listTitle:{ fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  listSub:  { fontSize: 11 },
+  calBadge: { fontSize: 13, fontWeight: '700' },
 });

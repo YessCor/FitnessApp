@@ -1,117 +1,121 @@
 /**
- * Fitness App - Tema rediseñado
- * Paleta: Naranja energético + fondo oscuro profundo + acentos cyan
+ * FitnessApp — Tema Dual (Oscuro + Claro)
+ * Acento primario: Indigo eléctrico
  */
 
 import { Platform } from 'react-native';
 
-// ── Colores principales ─────────────────────────────────────────────────────
-export const Palette = {
+export type AppPalette = typeof DarkPalette;
+
+// ── Paleta Oscura ────────────────────────────────────────────────────────────
+export const DarkPalette = {
   // Fondos
-  bgDeep:     '#0B0D12',
-  bgCard:     '#13161E',
-  bgElevated: '#1C2030',
+  bgDeep:     '#0D0D0F',
+  bgCard:     '#141416',
+  bgElevated: '#1C1C1F',
+  bgSurface:  '#232328',
 
-  // Acento primario — naranja energético
-  primary:        '#FF6B2B',
-  primaryLight:   '#FF8C5A',
-  primaryDark:    '#CC4F18',
-  primaryGlow:    'rgba(255,107,43,0.18)',
-
-  // Acento secundario — cyan/turquesa
-  secondary:      '#00D4AA',
-  secondaryLight: '#33DEBB',
-  secondaryGlow:  'rgba(0,212,170,0.15)',
-
-  // Acento terciario — violeta suave
-  accent:     '#7C6FFF',
-  accentGlow: 'rgba(124,111,255,0.15)',
+  // Acento primario — Indigo eléctrico
+  primary:      '#6366F1',
+  primaryLight: '#818CF8',
+  primaryDark:  '#4F46E5',
+  primaryGlow:  'rgba(99,102,241,0.18)',
 
   // Texto
-  textPrimary:   '#F0F2F8',
-  textSecondary: '#8A90A8',
-  textMuted:     '#4E5368',
+  textPrimary:   '#F4F4F6',
+  textSecondary: '#8B8B9A',
+  textMuted:     '#46464F',
+
+  // Utilitarios heredados (compatibilidad)
+  secondary:      '#6366F1',
+  secondaryLight: '#818CF8',
+  secondaryGlow:  'rgba(99,102,241,0.14)',
+  accent:         '#6366F1',
+  accentGlow:     'rgba(99,102,241,0.14)',
 
   // Alertas
-  success: '#22D98B',
-  danger:  '#FF4D6A',
-  warning: '#FFB923',
+  success: '#34D399',
+  danger:  '#F87171',
+  warning: '#FBBF24',
 
   // Bordes
-  border:      '#1F2338',
-  borderLight: '#2A2F4A',
+  border:      '#1F1F24',
+  borderLight: '#2A2A32',
 };
 
-// ── Colors (mantiene compatibilidad con expo-router) ────────────────────────
-const tintColorLight = Palette.primary;
-const tintColorDark  = Palette.primary;
+// ── Paleta Clara ─────────────────────────────────────────────────────────────
+export const LightPalette: AppPalette = {
+  // Fondos
+  bgDeep:     '#F2F2F7',
+  bgCard:     '#FFFFFF',
+  bgElevated: '#F7F7FA',
+  bgSurface:  '#EBEBF0',
 
+  // Acento primario
+  primary:      '#4F46E5',
+  primaryLight: '#6366F1',
+  primaryDark:  '#3730A3',
+  primaryGlow:  'rgba(79,70,229,0.12)',
+
+  // Texto
+  textPrimary:   '#111118',
+  textSecondary: '#6B6B7A',
+  textMuted:     '#9898A8',
+
+  // Utilitarios
+  secondary:      '#4F46E5',
+  secondaryLight: '#6366F1',
+  secondaryGlow:  'rgba(79,70,229,0.10)',
+  accent:         '#4F46E5',
+  accentGlow:     'rgba(79,70,229,0.10)',
+
+  // Alertas
+  success: '#10B981',
+  danger:  '#EF4444',
+  warning: '#F59E0B',
+
+  // Bordes
+  border:      '#E4E4EE',
+  borderLight: '#CDCDD8',
+};
+
+// ── Paleta por defecto (dark) para compatibilidad con imports directos ───────
+export const Palette = DarkPalette;
+
+// ── Colors (expo-router) ─────────────────────────────────────────────────────
 export const Colors = {
   light: {
-    text:            Palette.textPrimary,
-    background:      Palette.bgDeep,
-    tint:            tintColorLight,
-    icon:            Palette.textSecondary,
-    tabIconDefault:  Palette.textSecondary,
-    tabIconSelected: tintColorLight,
+    text:            LightPalette.textPrimary,
+    background:      LightPalette.bgDeep,
+    tint:            LightPalette.primary,
+    icon:            LightPalette.textSecondary,
+    tabIconDefault:  LightPalette.textMuted,
+    tabIconSelected: LightPalette.primary,
   },
   dark: {
-    text:            Palette.textPrimary,
-    background:      Palette.bgDeep,
-    tint:            tintColorDark,
-    icon:            Palette.textSecondary,
-    tabIconDefault:  Palette.textSecondary,
-    tabIconSelected: tintColorDark,
+    text:            DarkPalette.textPrimary,
+    background:      DarkPalette.bgDeep,
+    tint:            DarkPalette.primary,
+    icon:            DarkPalette.textSecondary,
+    tabIconDefault:  DarkPalette.textMuted,
+    tabIconSelected: DarkPalette.primary,
   },
 };
 
 // ── Tipografía ───────────────────────────────────────────────────────────────
 export const Fonts = Platform.select({
-  ios: {
-    sans:    'system-ui',
-    serif:   'ui-serif',
-    rounded: 'ui-rounded',
-    mono:    'ui-monospace',
-  },
-  default: {
-    sans:    'normal',
-    serif:   'serif',
-    rounded: 'normal',
-    mono:    'monospace',
-  },
+  ios:     { sans: 'system-ui', mono: 'ui-monospace' },
+  default: { sans: 'normal',    mono: 'monospace' },
   web: {
-    sans:    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif:   "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono:    "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    mono: "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   },
 });
 
-// ── Espaciado y radios ───────────────────────────────────────────────────────
-export const Spacing = {
-  xs:  4,
-  sm:  8,
-  md:  16,
-  lg:  24,
-  xl:  32,
-  xxl: 48,
-};
-
-export const Radius = {
-  sm:   8,
-  md:   14,
-  lg:   20,
-  xl:   28,
-  full: 9999,
-};
-
-// ── Sombras ──────────────────────────────────────────────────────────────────
-export const Shadows = {
-  card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
+// ── Espaciado / Radios / Sombras ─────────────────────────────────────────────
+export const Spacing  = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
+export const Radius   = { sm: 6, md: 12, lg: 18, xl: 24, full: 9999 };
+export const Shadows  = {
+  card: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.45, shadowRadius: 8, elevation: 5 },
+  tabBar: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 20 },
 };
