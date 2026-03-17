@@ -1,34 +1,81 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ScrollView, View, Text, StyleSheet, StatusBar, ActivityIndicator, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { useAppTheme } from '@/hooks/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/hooks/useAuth';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
-interface Progreso { id: number; fecha: string; peso: number; notas: string | null; }
+interface Progreso { id: number; fecha: string; peso: number; notas: string | null; estatura?: number | null; }
 
-const DEFAULT_PROGRESS: Progreso[] = [
-  { id: 1, fecha: '2024-01-29', peso: 77.9, notas: 'Casi en meta' },
-  { id: 2, fecha: '2024-01-22', peso: 78.5, notas: 'Metiendo más cardio' },
-  { id: 3, fecha: '2024-01-15', peso: 79.2, notas: 'Buen progreso' },
-  { id: 4, fecha: '2024-01-08', peso: 79.8, notas: 'Primera semana completada' },
-  { id: 5, fecha: '2024-01-01', peso: 80.5, notas: 'Inicio del programa' },
-];
+const DEFAULT_PROGRESS: Progreso[] = [];
 
 export default function ProgressScreen() {
   const { palette, isDark } = useAppTheme();
+  const { token, tienePerfilFisico } = useAuth();
   const [progress, setProgress] = useState<Progreso[]>(DEFAULT_PROGRESS);
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPeso, setNewPeso] = useState('');
+  const [newNotas, setNewNotas] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchProgress(); }, []);
+  useEffect(() => { fetchProgress(); }, [token]);
 
   const fetchProgress = async () => {
+    if (!token) return;
+    
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/progreso`, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) { const d = await res.json(); if (d.length) setProgress(d); }
+      const res = await fetch(`${API_BASE}/progreso`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) { 
+        const d = await res.json(); 
+        if (d.length) setProgress(d); 
+        else setProgress([]);
+      }
     } catch {}
     finally { setLoading(false); }
+  };
+
+  const handleAddProgreso = async () => {
+    if (!newPeso || !token) return;
+    
+    const pesoNum = parseFloat(newPeso);
+    if (isNaN(pesoNum) || pesoNum < 30 || pesoNum > 300) {
+      Alert.alert('Error', 'Por favor ingresa un peso válido');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch(`${API_BASE}/progreso`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          peso: pesoNum,
+          notas: newNotas || null
+        })
+      });
+
+      if (res.ok) {
+        setShowAddModal(false);
+        setNewPeso('');
+        setNewNotas('');
+        fetchProgress();
+      } else {
+        const data = await res.json();
+        Alert.alert('Error', data.error || 'Error al guardar');
+      }
+    } catch {
+      Alert.alert('Error', 'Error de conexión');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fmtDate = (str: string) =>
@@ -40,8 +87,8 @@ export default function ProgressScreen() {
 
   // Chart
   const weights = progress.map(p => p.peso);
-  const minW    = Math.min(...weights);
-  const maxW    = Math.max(...weights);
+  const minW    = weights.length > 0 ? Math.min(...weights) : 0;
+  const maxW    = weights.length > 0 ? Math.max(...weights) : 1;
   const range   = maxW - minW || 1;
   const barH    = (w: number) => Math.max(8, ((w - minW) / range) * 80);
 
@@ -151,6 +198,65 @@ export default function ProgressScreen() {
           <View style={{ height: 120 }} />
         </ScrollView>
       )}
+
+      {/* FAB for adding progress */}
+      {token && tienePerfilFisico && (
+        <TouchableOpacity
+          style={[s.fab, { backgroundColor: palette.primary }]}
+          onPress={() => setShowAddModal(true)}
+        >
+          <IconSymbol size={24} name="plus" color="#fff" />
+        </TouchableOpacity>
+      )}
+
+      {/* Add Progress Modal */}
+      <Modal visible={showAddModal} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={[s.modalContent, { backgroundColor: palette.bgCard }]}>
+            <Text style={[s.modalTitle, { color: palette.textPrimary }]}>Registrar Peso</Text>
+            
+            <View style={s.inputGroup}>
+              <Text style={[s.label, { color: palette.textSecondary }]}>Peso (kg)</Text>
+              <TextInput
+                style={[s.input, { backgroundColor: palette.bgDeep, borderColor: palette.border, color: palette.textPrimary }]}
+                value={newPeso}
+                onChangeText={setNewPeso}
+                placeholder="70.5"
+                placeholderTextColor={palette.textMuted}
+                keyboardType="decimal-pad"
+              />
+            </View>
+
+            <View style={s.inputGroup}>
+              <Text style={[s.label, { color: palette.textSecondary }]}>Notas (opcional)</Text>
+              <TextInput
+                style={[s.input, { backgroundColor: palette.bgDeep, borderColor: palette.border, color: palette.textPrimary, height: 80, textAlignVertical: 'top' }]}
+                value={newNotas}
+                onChangeText={setNewNotas}
+                placeholder="¿Alguna nota sobre esta semana?"
+                placeholderTextColor={palette.textMuted}
+                multiline
+              />
+            </View>
+
+            <View style={s.modalButtons}>
+              <TouchableOpacity
+                style={[s.modalButton, { backgroundColor: palette.bgDeep }]}
+                onPress={() => setShowAddModal(false)}
+              >
+                <Text style={{ color: palette.textPrimary }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalButton, { backgroundColor: palette.primary }]}
+                onPress={handleAddProgreso}
+                disabled={saving}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{saving ? 'Guardando...' : 'Guardar'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -184,4 +290,17 @@ const s = StyleSheet.create({
   histNote:      { fontSize: 11 },
   histWeight:    { fontSize: 22, fontWeight: '700' },
   histDelta:     { fontSize: 11, fontWeight: '700' },
+
+  // FAB
+  fab: { position: 'absolute', right: 20, bottom: 30, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', maxWidth: 400, borderRadius: 16, padding: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  input: { height: 48, borderRadius: 12, paddingHorizontal: 16, fontSize: 16, borderWidth: 1 },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 20 },
+  modalButton: { flex: 1, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
 });

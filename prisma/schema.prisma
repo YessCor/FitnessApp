@@ -6,6 +6,54 @@ datasource db {
   provider = "postgresql"
 }
 
+// Tabla de Usuarios
+model Usuario {
+  id            Int           @id @default(autoincrement())
+  nombre        String        @map("nombre") @db.VarChar(100)
+  apellido      String        @map("apellido") @db.VarChar(100)
+  email         String        @unique @db.VarChar(255)
+  username      String        @unique @db.VarChar(50)
+  passwordHash  String        @map("password_hash") @db.VarChar(255)
+  fechaNacimiento DateTime?   @map("fecha_nacimiento") @db.Date
+  rol           String        @default("usuario") @db.VarChar(20)
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  perfilFisico  PerfilFisico?
+  progresos     Progreso[]
+
+  @@map("usuarios")
+}
+
+// Tabla de Perfil Físico
+model PerfilFisico {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int       @unique @map("usuario_id")
+  peso        Decimal   @db.Decimal(5, 2)
+  estatura    Decimal?  @db.Decimal(3, 2)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfil_fisico")
+}
+
+// Tabla de Progreso
+model Progreso {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int       @map("usuario_id")
+  peso        Decimal   @db.Decimal(5, 2)
+  estatura    Decimal?  @db.Decimal(3, 2)
+  fecha       DateTime  @db.Date
+  notas       String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([fecha])
+  @@map("progreso")
+}
+
 // Tabla de Ejercicios
 model Ejercicio {
   id            Int      @id @default(autoincrement())
@@ -83,14 +131,4 @@ model ComidaPlan {
   @@index([planId])
   @@index([comidaId])
   @@map("comidas_plan")
-}
-
-// Tabla de Progreso
-model Progreso {
-  id     Int      @id @default(autoincrement())
-  fecha  DateTime @db.Date
-  peso   Decimal  @db.Decimal(5, 2)
-  notas  String?  @db.Text
-
-  @@map("progreso")
 }

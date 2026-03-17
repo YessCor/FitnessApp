@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAppTheme } from '@/hooks/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const API_BASE = 'http://10.0.2.2:3000';
 
@@ -40,15 +41,21 @@ const TIPS: { id: number; label: string; value: string; icon: 'drop.fill' | 'moo
 export default function HomeScreen() {
   const { palette, isDark, toggleTheme } = useAppTheme();
   const router = useRouter();
+  const { usuario, token, tienePerfilFisico, logout } = useAuth();
   const [plans,     setPlans]     = useState<Plan[]>(DEFAULT_PLANS);
   const [exercises, setExercises] = useState<Exercise[]>(DEFAULT_EXERCISES);
   const [meals,     setMeals]     = useState<Meal[]>(DEFAULT_MEALS);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    if (token) fetchData(); 
+  }, [token]);
 
   const fetchData = async () => {
     const tryFetch = async (url: string) => {
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(url, { 
+        signal: AbortSignal.timeout(5000),
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error('bad response');
       return res.json();
     };
@@ -59,6 +66,11 @@ export default function HomeScreen() {
 
   const totalCal = DEFAULT_MEALS.reduce((s, m) => s + m.calorias, 0);
 
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
+
   return (
     <View style={[s.container, { backgroundColor: palette.bgDeep }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={palette.bgDeep} />
@@ -66,18 +78,61 @@ export default function HomeScreen() {
 
         {/* ── Header ── */}
         <View style={s.header}>
-          <View>
-            <Text style={[s.greeting, { color: palette.textMuted }]}>Bienvenido de vuelta</Text>
-            <Text style={[s.appTitle, { color: palette.textPrimary }]}>FitnessApp</Text>
+          <View style={{ flex: 1 }}>
+            {usuario ? (
+              <>
+                <Text style={[s.greeting, { color: palette.textMuted }]}>Bienvenido de nuevo</Text>
+                <Text style={[s.appTitle, { color: palette.textPrimary }]}>{usuario.nombre}</Text>
+              </>
+            ) : (
+              <>
+                <Text style={[s.greeting, { color: palette.textMuted }]}>Bienvenido a</Text>
+                <Text style={[s.appTitle, { color: palette.textPrimary }]}>FitnessApp</Text>
+              </>
+            )}
           </View>
-          <TouchableOpacity
-            style={[s.themeBtn, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <IconSymbol size={22} name={isDark ? 'sun.max.fill' : 'moon.fill'} color={palette.textPrimary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {usuario ? (
+              <TouchableOpacity
+                style={[s.themeBtn, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <IconSymbol size={20} name="rectangle.portrait.and.arrow.right" color={palette.danger} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[s.themeBtn, { backgroundColor: palette.primary, borderColor: palette.primary }]}
+                onPress={() => router.push('/login')}
+                activeOpacity={0.7}
+              >
+                <IconSymbol size={20} name="person.fill" color="#fff" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[s.themeBtn, { backgroundColor: palette.bgElevated, borderColor: palette.border }]}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <IconSymbol size={22} name={isDark ? 'sun.max.fill' : 'moon.fill'} color={palette.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* ── Auth Banner (if not logged in) ── */}
+        {!usuario && (
+          <TouchableOpacity 
+            style={[s.authBanner, { backgroundColor: palette.primaryGlow, borderColor: palette.primary }]}
+            onPress={() => router.push('/login')}
+            activeOpacity={0.8}
+          >
+            <View>
+              <Text style={[s.authBannerTitle, { color: palette.textPrimary }]}>Inicia sesión</Text>
+              <Text style={[s.authBannerSub, { color: palette.textSecondary }]}>Para guardar tu progreso</Text>
+            </View>
+            <IconSymbol size={24} name="chevron.right" color={palette.primary} />
+          </TouchableOpacity>
+        )}
 
         {/* ── Hero Card ── */}
         <View style={[s.heroCard, { backgroundColor: palette.primary }]}>
@@ -249,6 +304,15 @@ const s = StyleSheet.create({
     width: 44, height: 44, borderRadius: 14, marginTop: 4,
     borderWidth: 0.5, justifyContent: 'center', alignItems: 'center',
   },
+
+  // Auth Banner
+  authBanner: {
+    marginHorizontal: 20, marginBottom: 20, padding: 16, borderRadius: 14, 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1
+  },
+  authBannerTitle: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  authBannerSub: { fontSize: 12 },
 
   // Hero card
   heroCard: {
