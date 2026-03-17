@@ -25,8 +25,15 @@ app.use(express.json());
 
 // Configurar Prisma con Neon
 const connectionString = process.env.DATABASE_URL || '';
+console.log('DATABASE_URL loaded:', connectionString ? 'Yes (' + connectionString.substring(0, 30) + '...)' : 'No');
+
+// Crear cliente de Neon
 const sql = neon(connectionString);
+
+// Crear adaptador
 const adapter = new PrismaNeon(sql);
+
+// Configurar Prisma Client con el adaptador
 const prisma = new PrismaClient({ adapter });
 
 // Hacer prisma disponible globalmente

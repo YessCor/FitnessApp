@@ -7,11 +7,15 @@ const router = express.Router();
 
 // Registro de usuario
 router.post('/register', async (req, res) => {
+  console.log('Register endpoint hit');
+  console.log(req.body);
+  
   try {
     const { nombre, apellido, email, username, password, fecha_nacimiento } = req.body;
 
     // Validar campos requeridos
     if (!nombre || !apellido || !email || !username || !password) {
+      console.log('Validation failed: missing fields');
       return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
 
@@ -23,6 +27,7 @@ router.post('/register', async (req, res) => {
     });
 
     if (existingUser) {
+      console.log('User already exists:', existingUser.email === email ? email : username);
       return res.status(400).json({ 
         error: existingUser.email === email 
           ? 'El email ya está registrado' 
@@ -32,6 +37,7 @@ router.post('/register', async (req, res) => {
 
     // Hash de la contraseña
     const passwordHash = await bcrypt.hash(password, 10);
+    console.log('Password hashed successfully');
 
     // Crear usuario
     const usuario = await global.prisma.usuario.create({
@@ -56,6 +62,7 @@ router.post('/register', async (req, res) => {
       }
     });
 
+    console.log('User created successfully:', usuario.id);
     res.status(201).json({ 
       message: 'Usuario registrado exitosamente',
       usuario

@@ -114,18 +114,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     try {
+      console.log('[Register] Sending request to:', `${API_BASE}/auth/register`);
+      console.log('[Register] Data:', registerData);
+      
       const res = await fetchWithTimeout(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registerData)
       });
 
+      console.log('[Register] Response status:', res.status);
       const data = await res.json();
+      console.log('[Register] Response data:', data);
 
       if (!res.ok) {
         throw new Error(data.error || 'Error al registrar usuario');
       }
+      
+      console.log('[Register] Success!');
+    } catch (error: any) {
+      console.log('[Register] ERROR:', error);
+      throw error;
     } finally {
+      console.log('[Register] Setting loading to false');
       setLoading(false);
     }
   };
