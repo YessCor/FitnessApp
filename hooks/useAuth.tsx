@@ -1,6 +1,29 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
+ 
+console.warn('[useAuth] API_BASE =', API_BASE);
+
+// Helper: fetch con timeout para evitar que una petición quede colgada
+async function fetchWithTimeout(input: RequestInfo, init?: RequestInit, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(input, { ...(init || {}), signal: controller.signal });
+    return res;
+  } catch (error: any) {
+    const msg = (error && (error.message || '')).toString();
+    if (error && (error.name === 'AbortError' || msg.toLowerCase().includes('aborted'))) {
+      throw new Error('La petición tardó demasiado (timeout). Verifica la conexión o la IP del servidor.');
+    }
+    if (msg.toLowerCase().includes('network request failed') || msg.toLowerCase().includes('failed to fetch')) {
+      throw new Error(`No se puede conectar con el servidor en ${API_BASE}. Comprueba que el servidor (server/) esté corriendo y que el dispositivo tenga acceso a la red.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(id);
+  }
+}
 
 interface Usuario {
   id: number;
@@ -46,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!authTokenFinal) return false;
     
     try {
-      const res = await fetch(`${API_BASE}/perfil`, {
+      const res = await fetchWithTimeout(`${API_BASE}/perfil`, {
         headers: { Authorization: `Bearer ${authTokenFinal}` }
       });
       
@@ -66,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -91,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registerData)
@@ -117,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return;
 
     try {
-      const res = await fetch(`${API_BASE}/auth/me`, {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

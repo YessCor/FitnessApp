@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import {
-  ScrollView, View, Text, StyleSheet,
-  ActivityIndicator, TouchableOpacity, StatusBar,
-} from 'react-native';
-import { useAppTheme } from '@/hooks/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAppTheme } from '@/hooks/ThemeContext';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 interface Exercise {
   id: number;

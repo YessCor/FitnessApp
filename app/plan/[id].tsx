@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import {
-  ScrollView, View, Text, TouchableOpacity,
-  StatusBar, ActivityIndicator,
-} from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
-import { useAppTheme } from '@/hooks/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAppTheme } from '@/hooks/ThemeContext';
+import { Link, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  Text, TouchableOpacity,
+  View,
+} from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 interface EjercicioPlan {
   id: number; series: number; repeticiones: number;

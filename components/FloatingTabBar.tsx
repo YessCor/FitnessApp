@@ -1,12 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-  Platform, SafeAreaView, Animated,
-} from 'react-native';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useAppTheme } from '@/hooks/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { AppPalette } from '@/constants/theme';
+import { useAppTheme } from '@/hooks/ThemeContext';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useRef } from 'react';
+import {
+    Animated,
+    Platform,
+    StyleSheet,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type TabIconName = 'house.fill' | 'dumbbell.fill' | 'fork.knife' | 'chart.bar.fill';
 

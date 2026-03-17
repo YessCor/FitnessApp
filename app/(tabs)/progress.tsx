@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, View, Text, StyleSheet, StatusBar, ActivityIndicator, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
-import { useAppTheme } from '@/hooks/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAppTheme } from '@/hooks/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 interface Progreso { id: number; fecha: string; peso: number; notas: string | null; estatura?: number | null; }
 

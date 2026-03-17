@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 export default function PerfilFisicoScreen() {
   const { palette } = useAppTheme();

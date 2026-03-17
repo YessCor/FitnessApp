@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 interface Recomendaciones {
   imc: number;

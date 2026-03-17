@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
-import { Link } from 'expo-router';
-import { Palette } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Palette } from '@/constants/theme';
+import { Link } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:3000';
+const API_BASE = 'http://10.9.220.193:3000';
 
 interface Progreso { id: number; fecha: string; peso: number; notas: string | null; }
 
